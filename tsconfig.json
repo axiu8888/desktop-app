@@ -21,8 +21,8 @@
     "esModuleInterop": true,
     "noEmit": true, //  不生成编译后的文件，默认是false 
     "declaration": true, /* 生成相关的 '.d.ts' 文件。 */
-    "declarationDir": "./types", /* '.d.ts' 文件输出目录。比outDir优先级高 */
-    "outDir": "./dist/", /* .js文件输出目录，declarationDir未指定，.d.ts也在该目录下*/
+    "declarationDir": "./dist/types", /* '.d.ts' 文件输出目录。比outDir优先级高 */
+    "outDir": "./dist/app/", /* .js文件输出目录，declarationDir未指定，.d.ts也在该目录下*/
     "emitDeclarationOnly": false, /* 只生成声明文件，不生成 js 文件*/
     "declarationMap": false,
     /* 无未使用的本地 */

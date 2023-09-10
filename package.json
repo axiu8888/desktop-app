@@ -1,7 +1,7 @@
 {
   "name": "desktop-app",
   "version": "0.1.0",
-  "main": "dist-electron/main/index.js",
+  "main": "dist/electron/main/index.js",
   "description": "桌面程序",
   "author": "dingxiuan",
   "license": "MIT",
@@ -20,7 +20,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder",
+    "build-vue": "vue-tsc --noEmit && vite build",
+    "build": "npm run build-vue && vite build && electron-builder",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit"
   },
