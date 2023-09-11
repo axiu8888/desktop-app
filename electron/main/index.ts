@@ -1,6 +1,11 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, PrintToPDFOptions } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
+import { binary } from '../../src/libs/binary-helper';
+// import { fs } from 'node:fs';
+import { writeFile } from 'fs';
+
+// const fs = require('fs');
 
 // The built directory structure
 //
@@ -63,6 +68,35 @@ async function createWindow() {
   } else {
     win.loadFile(indexHtml)
   }
+
+  setTimeout(() => {
+    // 加载
+    win.loadURL('https://pr.sensecho.com/monitorReports/physical?reportZid=28f45456bc62485897eb132e54d9ed67&loginName=ywtest&version=undefined&extend=undefined&moduleShow=true');
+    // win.loadURL('http://192.168.1.198/supportReport/v1/smwt?version=v1&reportId=f2bad5e772d14a919604be53ff2c92c3&extend=null');
+
+    setTimeout(() => {
+      win.webContents
+        .printToPDF(<PrintToPDFOptions>{
+          displayHeaderFooter: true,
+          preferCSSPageSize: true,
+          //pageSize: 'a4',
+        })
+        .then(buffer => {
+          // console.log(binary.bytesToStr(buffer))
+
+          // fs.writeFile('D:/tmp/test.pdf', buffer, err => {
+          writeFile('D:/tmp/test.pdf', buffer, err => {
+            if (err) {
+              console.error(err);
+            }
+            // file written successfully
+          });
+
+        })
+        .catch(err => console.error(err));
+    }, 10_000);
+
+  }, 5000);
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
