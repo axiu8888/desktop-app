@@ -25,7 +25,7 @@ export class WaveView {
   /**
    * 心电数据包，每秒一个包
    */
-  models: ViewModel[] = [];
+  public readonly models: ViewModel[] = [];
   /**
    * 是否已清理视图
    */
@@ -37,11 +37,11 @@ export class WaveView {
   /**
    * 是否为暂停状态
    */
-  _drawable: boolean = false;
+  isPause: boolean = false;
 
   constructor(c: HTMLCanvasElement, init?: { onInit(view: WaveView): void }, interval: number = 40) {
     this.canvas = c;
-    this.ctx = getCanvasContext(c);
+    this.ctx = getContext(c);
     this.interval = interval;
     // 初始化
     init!.onInit(this);
@@ -62,25 +62,12 @@ export class WaveView {
   }
 
   /**
-   * 是否可绘制的
-   *
-   * @param drawable 设置是否可绘制
-   */
-  set drawable(drawable: boolean) {
-    this._drawable = drawable;
-  }
-
-  get drawable(): boolean {
-    return this._drawable;
-  }
-
-  /**
    * 添加波形数组
    *
    * @param points 波形数值
    */
   push(...waves: number[][]) {
-    if (this.drawable) {
+    if (this.isPause) {
       return;
     }
     if (waves && waves.length) {
@@ -108,7 +95,7 @@ export class WaveView {
    */
   pause() {
     // 不绘制
-    this.drawable = false;
+    this.isPause = false;
     this.models.forEach((model) => model.clearWaveQ());
     this.stopTimer(true);
     // 清理视图
@@ -124,7 +111,7 @@ export class WaveView {
     this.models.forEach((model) => model.clearWaveQ());
     this.startTimer(true);
     // 绘制
-    this.drawable = true;
+    this.isPause = true;
   }
 
   /**
@@ -218,7 +205,7 @@ export class ViewModel {
   /**
    * 数据队列
    */
-  protected waveQ: Array<number[]> = [];
+  public waveQ: Array<number[]> = [];
   /**
    * 当前数据包
    */
@@ -278,7 +265,7 @@ export class ViewModel {
   /**
    * 空白间隔
    */
-  padding: number = 16;
+  wipeWidth: number = 16;
   /**
  * 线的宽度
  */
@@ -296,39 +283,39 @@ export class ViewModel {
    */
   lineJoin: CanvasLineJoin;
 
-  constructor(options: ViewModelOptions) {
-    this.width = options.width;
-    this.height = options.height;
+  constructor(public opts: ViewModelOptions) {
+    this.width = getOrDefault(opts.width, 0);
+    this.height = getOrDefault(opts.height, 0);
     // 是否清理View
-    this.clearDirty = options.clearDirty !== undefined ? options.clearDirty : true;
+    this.clearDirty = opts.clearDirty !== undefined ? opts.clearDirty : true;
     // 绘制数量
-    this.drawCount = options.drawCount ? options.drawCount : 1;
+    this.drawCount = opts.drawCount ? opts.drawCount : 1;
     // 中值
-    this.median = options.median;
+    this.median = getOrDefault(opts.median, 512);
     // 基线
-    this.baseLine = Math.floor(getOrDefault(options.baseLine, this.height / 2));
+    this.baseLine = Math.floor(getOrDefault(opts.baseLine, this.height / 2));
     // 步长
-    this.step = getOrDefault(options.step, 1.0);
+    this.step = getOrDefault(opts.step, 1.0);
     // 缓存数量
-    this.maxCacheSize = Math.floor(getOrDefault(options.maxCacheSize, 0));
+    this.maxCacheSize = Math.floor(getOrDefault(opts.maxCacheSize, 0));
     // X的起点
-    this.startX = getOrDefault(options.startX, 0);
+    this.startX = getOrDefault(opts.startX, 0);
     // Y的起点
-    this.startY = getOrDefault(options.startY, 0);
+    this.startY = getOrDefault(opts.startY, 0);
     // 空白间隔
-    this.padding = getOrDefault(options.padding, 16);
+    this.wipeWidth = getOrDefault(opts.wipeWidth, 16);
     // let scale = window.devicePixelRatio;
     // 缩放比
-    this.scaleRatio = getOrDefault(options.scaleRatio, 1.0);
+    this.scaleRatio = getOrDefault(opts.scaleRatio, 1.0);
     // x轴
     this.x = -1;
     // y轴
     this.y = this.baseLine;
 
-    this.lineWidth = getOrDefault(options.lineWidth, 1);
-    this.strokeStyle = getOrDefault(options.strokeStyle, 'black');
-    this.lineCap = getOrDefault(options.lineCap, 'round');
-    this.lineJoin = getOrDefault(options.lineJoin, 'round');
+    this.lineWidth = getOrDefault(opts.lineWidth, 1);
+    this.strokeStyle = getOrDefault(opts.strokeStyle, 'black');
+    this.lineCap = getOrDefault(opts.lineCap, 'round');
+    this.lineJoin = getOrDefault(opts.lineJoin, 'round');
   }
 
   /**
@@ -353,7 +340,7 @@ export class ViewModel {
    * @returns 是否绘制
    */
   onDraw(ctx: CanvasRenderingContext2D, render: boolean = true): boolean {
-    for (;;) {
+    for (; ;) {
       if (this.curPoints && this.curPoints.length) {
         // 绘制
         this.drawView(ctx, this.curPoints, render);
@@ -380,14 +367,17 @@ export class ViewModel {
     this.onSetPaint(ctx);
 
     ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
+    ctx.moveTo(this.startX + this.x, this.startY + this.y);
     // 绘制线条
     let size = Math.min(points.length, this.drawCount);
     for (let i = 0; i < size; i++) {
       this.x = this.calculateX();
       this.y = this.calculateY(points.shift() as number);
-      ctx.lineTo(this.x, this.y);
+      ctx.lineTo(this.startX + this.x, this.startY + this.y);
     }
+    // if(this.options.column === 1) {
+    //   console.log(`${this.options.row}, ${this.options.column}, x: ${this.startX + this.x}, y: ${this.y}`);
+    // }
     if (render) {
       ctx.stroke();
     }
@@ -415,7 +405,7 @@ export class ViewModel {
    */
   onClearDirty(ctx: CanvasRenderingContext2D) {
     if (this.clearDirty) {
-      ctx.clearRect(this.x, this.startY, this.padding, this.height);
+      ctx.clearRect(this.startX + this.x, this.startY, this.wipeWidth, this.height);
     }
   }
 
@@ -450,14 +440,17 @@ export class ViewModel {
  * ViewModel的可选项
  */
 export interface ViewModelOptions {
+  row?: number,
+  column?: number,
+
   /**
- * 宽度
- */
-  width: number;
-  /**
-   * 高度
+   * 宽度，默认是canvas的宽度
    */
-  height: number;
+  width?: number;
+  /**
+   * 高度，默认是canvas的高度
+   */
+  height?: number;
   /**
    * 是否清理，默认清理
    */
@@ -465,11 +458,11 @@ export interface ViewModelOptions {
   /**
    * 中值: (最大值 - 最小值) / 2
    */
-  median: number;
+  median?: number;
   /**
-   * 绘制数量
+   * 绘制数量: 1
    */
-  drawCount: number;
+  drawCount?: number;
   /**
    * 基线，默认高度的一半
    */
@@ -495,9 +488,9 @@ export interface ViewModelOptions {
    */
   startY?: number;
   /**
-   * 空白间隔
+   * 擦除间隔
    */
-  padding?: number;
+  wipeWidth?: number;
   /**
    * 线的宽度
    */
@@ -563,11 +556,11 @@ export const drawGrid = function (canvas: HTMLCanvasElement, gridSize: number, c
  */
 export const setPaint = function (ctx: CanvasRenderingContext2D, i: number) {
   if (i === 0 || (i + 1) % 5 === 0) {
-    ctx.strokeStyle = "#FF0000";
+    ctx.strokeStyle = "#00FF00";
     ctx.lineWidth = 1.0;
   } else {
-    ctx.strokeStyle = "#990000";
-    ctx.lineWidth = 0.2;
+    ctx.strokeStyle = "#00FF99";
+    ctx.lineWidth = 0.4;
   }
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -588,7 +581,7 @@ export const setCanvasPixelRatio = function (canvas: HTMLCanvasElement
   // width = getOrDefault(width, canvas.width);
   // height = getOrDefault(height, canvas.height);
   if (ratio) {
-    getCanvasContext(canvas).scale(ratio, ratio);
+    getContext(canvas).scale(ratio, ratio);
     canvas.style.width = width + "px";
     canvas.style.height = height + "px";
     canvas.width = width * ratio;
@@ -602,8 +595,8 @@ export const setCanvasPixelRatio = function (canvas: HTMLCanvasElement
  *
  * @param canvas 画布
  */
-export const getCanvasContext = function (canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  return canvas.getContext("2d", { alpha: false }) as CanvasRenderingContext2D;
+export const getContext = function (canvas: HTMLCanvasElement, alpha: boolean = true): CanvasRenderingContext2D {
+  return canvas.getContext("2d", { alpha: alpha }) as CanvasRenderingContext2D;
 }
 
 /**
@@ -624,7 +617,7 @@ const getOrDefault = <T>(v: any, dv: T) => v !== null && v !== undefined ? v : d
 // 心电每秒200个值      每次绘制8个值
 // 脉搏波每秒50个值     每次绘制2个值
 // 胸腹呼吸每秒25个值   每次绘制1个值
-export function createWaveView(c: HTMLCanvasElement): WaveView {
+export function createEcgResp(c: HTMLCanvasElement): WaveView {
   return new WaveView(c, {
     // 初始化
     onInit(view: WaveView) {
@@ -642,7 +635,7 @@ export function createWaveView(c: HTMLCanvasElement): WaveView {
           baseLine: (canvas.height / 4), // 基线
           maxCacheSize: 2, // 缓存数量
           scaleRatio: 0.5, // 缩放比
-          padding: 16, // 空白填充
+          wipeWidth: 16, // 空白填充
           startX: 0,
           startY: 0,
           strokeStyle: '#FF0000'
@@ -658,7 +651,7 @@ export function createWaveView(c: HTMLCanvasElement): WaveView {
           baseLine: canvas.height * (3 / 4.0), // 基线
           maxCacheSize: 2, // 缓存数量
           scaleRatio: 0.2, // 缩放比
-          padding: 16, // 空白填充
+          wipeWidth: 16, // 空白填充
           startX: 0,
           startY: canvas.height / 2 - 2,
           strokeStyle: '#00FF00'
@@ -674,7 +667,7 @@ export function createWaveView(c: HTMLCanvasElement): WaveView {
           baseLine: canvas.height * (3 / 4.0), // 基线
           maxCacheSize: 2, // 缓存数量
           scaleRatio: 0.2, // 缩放比
-          padding: 16, // 空白填充
+          wipeWidth: 16, // 空白填充
           startX: 0,
           startY: canvas.height / 2 + 2,
           strokeStyle: '#FFFF00'
@@ -706,3 +699,124 @@ export function createWaveView(c: HTMLCanvasElement): WaveView {
     }
   }, 40);
 }
+
+// 40毫秒执行一次
+// 心电每秒200个值      每次绘制8个值
+export function createEcg1(c: HTMLCanvasElement): WaveView {
+  return new WaveView(c, {
+    // 初始化
+    onInit(view: WaveView) {
+      let canvas = view.canvas;
+      let step = 0.6;
+      // 添加ViewModel
+      view.models.push(
+        // 创建心电
+        new ViewModel({
+          width: canvas.width, // 宽度
+          height: canvas.height, // 高度
+          drawCount: 8, // 绘制点数
+          median: 512, // 中值 = (最大值 - 最小值) / 2
+          step: step, // 步长
+          baseLine: (canvas.height / 2), // 基线
+          maxCacheSize: 2, // 缓存数量
+          scaleRatio: 0.5, // 缩放比
+          wipeWidth: 16, // 空白填充
+          startX: 0,
+          startY: 0,
+          strokeStyle: '#FF0000'
+        })
+      );
+    }
+  }, 40);
+}
+
+
+/**
+ * 创建WaveView
+ *
+ * 40毫秒执行一次
+ * 心电每秒200个值      每次绘制8个值
+ *
+ * @param canvas 画布
+ * @param row 行
+ * @param column 列
+ * @param scaleRatio 缩放比
+ * @param opt 参数
+ * @returns 返回创建的WaveView
+ */
+export function createWaveView(canvas: HTMLCanvasElement, row: number = 1, column: number = 1, opt: ViewModelOptions = DEFAULT_OPTS): WaveView {
+  return new WaveView(canvas, {
+    // 初始化
+    onInit(view: WaveView) {
+      let canvas = view.canvas;
+      let width = canvas.width / column;
+      let height = canvas.height / row;
+      let baseLine = height / 2;
+      for (let i = 0; i < row; i++) {
+        for (let j = 0; j < column; j++) {
+          let vmOpt = <ViewModelOptions>{
+            ...opt,
+            row: i,
+            column: j,
+            width: width, // 宽度
+            height: height, // 高度
+            baseLine: baseLine, // 基线: 第1条线的2分之1
+            startX: width * j,
+            startY: height * i,
+            clearDirty: true, // 擦除
+          };
+          // 添加ViewModel
+          view.models.push(new ViewModel(vmOpt));
+        }
+      }
+    }
+  }, 40);
+}
+
+/**
+ * 创建WaveView
+ *
+ * @param container 容器(div或其他)
+ * @param row 行
+ * @param column 列
+ * @param opt 可选项参数
+ * @returns 返回创建的WaveView
+ */
+export const createCanvasWaveView = (container: HTMLElement, row: number = 1, column: number = 1, opt: ViewModelOptions = DEFAULT_OPTS): WaveView => {
+  let canvas = document.createElement('canvas')
+  canvas.setAttribute('width', container.clientWidth.toString()) //给canvas设置宽度
+  canvas.setAttribute('height', container.clientHeight.toString()) //给canvas设置高度
+  container.appendChild(canvas);
+  setCanvasPixelRatio(canvas, window.devicePixelRatio, canvas?.clientWidth, canvas?.clientHeight);
+  return createWaveView(canvas, row, column, opt);
+}
+
+/**
+ * 创建背景网格
+ *
+ * @param container 容器(div或其他)
+ * @returns 返回创建的Canvas
+ */
+export const createCanvasGridBG = (container: HTMLElement) => {
+  let canvas = document.createElement('canvas')
+  canvas.setAttribute('width', container.clientWidth.toString()) //给canvas设置宽度
+  canvas.setAttribute('height', container.clientHeight.toString()) //给canvas设置高度
+  container.appendChild(canvas)
+  setCanvasPixelRatio(canvas, window.devicePixelRatio, canvas?.clientWidth, canvas?.clientHeight);
+  drawGrid(canvas, 20, true);
+  return canvas;
+}
+
+
+export const DEFAULT_OPTS = <ViewModelOptions>{
+  drawCount: 8, // 绘制点数
+  median: 512, // 中值 = (最大值 - 最小值) / 2
+  step: 1.5, // 步长
+  maxCacheSize: 2, // 缓存数量
+  scaleRatio: 1, // 缩放比
+  wipeWidth: 16, // 空白填充
+  strokeStyle: '#FF0000',
+  // strokeStyle: '#00FF00',
+  lineWidth: 1.5, // 线的宽度
+  clearDirty: true, // 擦除
+};

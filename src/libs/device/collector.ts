@@ -3,7 +3,7 @@
 // 采集器解析
 
 import { ByteBuf, binary } from "../binary-helper";
-import { dateFmt } from "../date-utils";
+import { utils } from "../core";
 
 
 // 采集器包头
@@ -813,7 +813,7 @@ export class CollectorParser {
       deviceId: deviceId, // 设备ID
       err: err, // 错误
       time: time, // // 时间
-      date: dateFmt(time), // 血压的测量时间
+      date: utils.dateFmt(time), // 血压的测量时间
       systolic: binary.bytesToNumber([(data[13] & 0b00000001), data[14]]), // 收缩压
       diastolic: binary.bytesToNumber([((data[13] & 0b00000010) >> 1), data[15]]), // 舒张压
       avg: binary.bytesToNumber([((data[13] & 0b00000100) >> 2), data[16]]), // 平均压

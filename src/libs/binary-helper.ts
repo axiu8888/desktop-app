@@ -1,4 +1,4 @@
-import { ArrayPredicate, tryCatch } from "./core";
+import { utils } from './core';
 
 /**
  * 二进制工具类
@@ -10,10 +10,11 @@ export class BinaryHelper {
   static hasTextCodec: boolean;
 
   static {
-    tryCatch(
-      () => BinaryHelper.hasTextCodec = (new TextEncoder() != null) && (new TextDecoder('utf-8') != null),
-      (err: any) => BinaryHelper.hasTextCodec = false
-    );
+    try {
+      BinaryHelper.hasTextCodec = new TextEncoder() != null && new TextDecoder('utf-8') != null;
+    } catch (err) {
+      BinaryHelper.hasTextCodec = false;
+    }
   }
 
   /**
@@ -36,7 +37,7 @@ export class BinaryHelper {
     }
     return dest;
   }
-
+  
   /**
    * 转换成 number[]
    *
@@ -44,7 +45,10 @@ export class BinaryHelper {
    * @returns 返回转换后的 number[]
    */
   asNumberArray(src: number[] | Array<number> | Uint8Array | ArrayBuffer): number[] {
-    if(src instanceof Array) {
+    if(typeof src === 'undefined') {
+      return [];
+    }
+    if (src instanceof Array) {
       return src;
     }
     if (src instanceof ArrayBuffer) {
@@ -57,13 +61,35 @@ export class BinaryHelper {
   }
 
   /**
+   * 转换成 number[]
+   *
+   * @param src 数据源
+   * @returns 返回转换后的 number[]
+   */
+  asUint8Array(src: number[] | Array<number> | Uint8Array | ArrayBuffer): Uint8Array {
+    if(typeof src === 'undefined') {
+      return new Uint8Array([]);
+    }
+    if (src instanceof Uint8Array) {
+      return src;
+    }
+    if (src instanceof Array) {
+      return new Uint8Array(src);
+    }
+    if (src instanceof ArrayBuffer) {
+      return new Uint8Array(src);
+    }
+    return src as any;
+  }
+
+  /**
    * 转换成 ArrayBuffer
    *
    * @param src 数据源
    * @returns 返回转换后的 ArrayBuffer
    */
   asArrayBuffer(src: number[] | Array<number> | Uint8Array | ArrayBuffer): ArrayBuffer {
-    if(src instanceof ArrayBuffer) {
+    if (src instanceof ArrayBuffer) {
       return src;
     }
     if (src instanceof Uint8Array) {
@@ -72,7 +98,7 @@ export class BinaryHelper {
     if (src instanceof Array) {
       return new Uint8Array(src).buffer;
     }
-    return src as any;
+    return src as ArrayBuffer;
   }
 
   /**
@@ -105,17 +131,17 @@ export class BinaryHelper {
       if (code < 0x80) {
         ui8a[offset++] = code;
       } else if (code < 0x800) {
-        ui8a[offset++] = 0xC0 | (code >> 6);
-        ui8a[offset++] = 0x80 | (code & 0x3F);
+        ui8a[offset++] = 0xc0 | (code >> 6);
+        ui8a[offset++] = 0x80 | (code & 0x3f);
       } else if (code < 0x10000) {
-        ui8a[offset++] = 0xE0 | (code >> 12);
-        ui8a[offset++] = 0x80 | ((code >> 6) & 0x3F);
-        ui8a[offset++] = 0x80 | (code & 0x3F);
+        ui8a[offset++] = 0xe0 | (code >> 12);
+        ui8a[offset++] = 0x80 | ((code >> 6) & 0x3f);
+        ui8a[offset++] = 0x80 | (code & 0x3f);
       } else {
-        ui8a[offset++] = 0xF0 | (code >> 18);
-        ui8a[offset++] = 0x80 | ((code >> 12) & 0x3F);
-        ui8a[offset++] = 0x80 | ((code >> 6) & 0x3F);
-        ui8a[offset++] = 0x80 | (code & 0x3F);
+        ui8a[offset++] = 0xf0 | (code >> 18);
+        ui8a[offset++] = 0x80 | ((code >> 12) & 0x3f);
+        ui8a[offset++] = 0x80 | ((code >> 6) & 0x3f);
+        ui8a[offset++] = 0x80 | (code & 0x3f);
       }
     }
     return this.asArrayBuffer(ui8a.subarray(0, offset));
@@ -137,13 +163,14 @@ export class BinaryHelper {
    */
   bytesToStr(bytes: number[] | Array<number> | Uint8Array | ArrayBuffer, charset = 'utf-8'): string {
     bytes = this.asArrayBuffer(bytes);
-    if (BinaryHelper.hasTextCodec) { // 支持 TextDecoder
+    if (BinaryHelper.hasTextCodec) {
+      // 支持 TextDecoder
       let textDecoder = new TextDecoder(charset);
       return textDecoder.decode(bytes);
     }
     let dv = new DataView(bytes);
     let u8a = new Uint8Array(bytes.byteLength);
-    u8a.forEach((v, i, arr) => arr[i] = dv.getUint8(i));
+    u8a.forEach((v, i, arr) => (arr[i] = dv.getUint8(i)));
     let array = <string[]>[];
     for (let i = 0; i < u8a.length; i++) {
       let bin = u8a[i].toString(2);
@@ -170,11 +197,11 @@ export class BinaryHelper {
    */
   hexToBytes(hex: string): number[] {
     if (hex.length % 2 != 0) {
-      throw new Error("不是16进制数据: " + hex);
+      throw new Error('不是16进制数据: ' + hex);
     }
 
     let array = <number[]>[];
-    for (let i = 0; i < hex.length; i+=2) {
+    for (let i = 0; i < hex.length; i += 2) {
       array.push(parseInt(hex.substring(i, i + 2), 16));
     }
     return array;
@@ -193,14 +220,14 @@ export class BinaryHelper {
     for (let i = 0, len = bytes.length, tmp; i < len; i++) {
       tmp = (bytes[i] & 0xff).toString(16);
       if (tmp.length == 1) {
-        array.push("0");
+        array.push('0');
       }
       tmp = tmp.toUpperCase();
-      if (!(trim && tmp === "FF")) {
+      if (!(trim && tmp === 'FF')) {
         array.push(tmp);
       }
     }
-    return array.join("");
+    return array.join('');
   }
 
   /**
@@ -217,12 +244,12 @@ export class BinaryHelper {
     } else if (payload.length) {
       payload.forEach((v) => this.pushBytes(bytes, v));
     } else {
-      if (typeof payload === "number") {
+      if (typeof payload === 'number') {
         bytes.push(payload);
-      } else if (typeof payload === "string") {
+      } else if (typeof payload === 'string') {
         bytes.push(parseInt(payload));
       } else {
-        throw new Error("不支持的类型数据: " + JSON.stringify(payload));
+        throw new Error('不支持的类型数据: ' + JSON.stringify(payload));
       }
     }
   }
@@ -236,7 +263,7 @@ export class BinaryHelper {
    */
   hostToBytes(ip: string, port: number, bigEndian = false) {
     let array = <number[]>[];
-    let splits = (ip + "").split(".");
+    let splits = (ip + '').split('.');
     splits.forEach((v) => array.push(parseInt(v) & 0xff));
     if (port) {
       if (bigEndian) {
@@ -260,6 +287,9 @@ export class BinaryHelper {
    * @param bigEndian 是否为大端
    */
   numberToBytes(num: number, bit: number, bigEndian = true): number[] {
+    if (![8, 16, 32, 64].includes(bit)) {
+      throw new Error('错误的字节位数(8/16/32/64): ' + bit);
+    }
     let size = Math.floor(bit / 8);
     let bytes = <number[]>[];
     for (let i = 0; i < size; i += 1) {
@@ -319,18 +349,24 @@ export class BinaryHelper {
    * 字节数组转换成数字数组
    *
    * @param bytes  字节数组
-   * @param bitSize 每一位的大小: 8/16/32/64  分別对应 1/2/4/8 个字节
+   * @param bit 每一位的大小: 8/16/32/64  分別对应 1/2/4/8 个字节
    * @param bigEndian  大端
    * @param signed 是否为有符号整数
+   * @param skipBefore 执行前跳过的字节数
+   * @param skipAfter 执行后跳过的字节数
    * @return 返回一个整数
    */
-  bytesToNumberArray(bytes: Array<number> | Uint8Array | ArrayBuffer, bitSize: number, bigEndian = true, signed = false): number[] {
-    if(![8, 16, 32, 64].includes(bitSize)) { throw new Error('错误的字节长度: ' + bitSize) }
+  bytesToNumberArray(bytes: Array<number> | Uint8Array | ArrayBuffer, bit: number, bigEndian = true, signed = false, skipBefore = 0, skipAfter = 0): number[] {
+    if (![8, 16, 32, 64].includes(bit)) {
+      throw new Error('错误的字节位数(8/16/32/64): ' + bit);
+    }
     bytes = this.asNumberArray(bytes);
-    let size = bitSize / 8;
-    let array = new Array<number>(bytes.length / size);
+    let size = bit / 8;
+    let array = new Array<number>(bytes.length / (size + skipBefore + skipAfter));
     for (let i = 0, j = 0; i < bytes.length; i += size) {
+      i += skipBefore;
       array[j++] = this.bytesToNumber(bytes.slice(i, i + size), bigEndian, signed);
+      i += skipBefore;
     }
     return array;
   }
@@ -369,12 +405,12 @@ export class BinaryHelper {
    * @returns 返回转换后的16进制字符串
    */
   float32ToHex(float32: number): string {
-    const getHex = (i: number) => ("00" + i.toString(16)).slice(-2);
+    const getHex = (i: number) => ('00' + i.toString(16)).slice(-2);
     let view = new DataView(new ArrayBuffer(4));
     view.setFloat32(0, float32);
     return Array.apply(null, { length: 4 } as any)
       .map((_, i) => getHex(view.getUint8(i)))
-      .join("");
+      .join('');
   }
 
   /**
@@ -384,14 +420,14 @@ export class BinaryHelper {
    * @returns 返回转换后的2进制字符串
    */
   float32ToBin(float32: number): string {
-    const HexToBin = (hex: string) => parseInt(hex, 16).toString(2).padStart(32, "0");
-    const getHex = (i: number) => ("00" + i.toString(16)).slice(-2);
+    const HexToBin = (hex: string) => parseInt(hex, 16).toString(2).padStart(32, '0');
+    const getHex = (i: number) => ('00' + i.toString(16)).slice(-2);
     let view = new DataView(new ArrayBuffer(4));
     view.setFloat32(0, float32);
     return HexToBin(
       Array.apply(null, { length: 4 } as any)
         .map((_, i) => getHex(view.getUint8(i)))
-        .join("")
+        .join(''),
     );
   }
 
@@ -446,11 +482,7 @@ export class BinaryHelper {
    */
   decimal(value: number, decimalBits = -1, floor = false): number {
     let delta = this.delta(decimalBits);
-    return decimalBits > 0
-      ? floor
-        ? Math.floor(value * delta) / delta
-        : Math.round(value * delta) / delta
-      : value;
+    return decimalBits > 0 ? (floor ? Math.floor(value * delta) / delta : Math.round(value * delta) / delta) : value;
   }
 
   /**
@@ -462,6 +494,59 @@ export class BinaryHelper {
       delta *= 10;
     }
     return delta;
+  }
+
+  /**
+   * 解析波形
+   *
+   * @param data      数据
+   * @param start     开始的位置
+   * @param end       结束的位置
+   * @param pos       每组位置
+   * @param size      每组的数量
+   * @param perOffset 每个点的偏移量
+   * @param step      每组的步长，比如：28个字节一个循环
+   * @param bigEndian  大端
+   * @param signed 是否为有符号整数
+   * @return 返回解析后的数据
+   */
+  parseWave(data: number[], start: number = 0, end: number = data.length, pos: number, size: number, perOffset: number, step: number, bigEndian = true, signed = false): number[] {
+    // (600 - 0) / 24 * size = 25 * size = 400 // 单导
+    // (600 - 0) / 24 * 8 = 25 * 8 = 200 // 单导
+    // (600 - 0) / 24 * size = 25 * size = 400 // 6导
+    // (600 - 0) / 24 * 8 = 25 * 8 = 200 // 6导
+    let wave = new Array<number>(((end - start) / step) * size);
+    let buf = [];
+    for (let i = start, j = 0; i < end; i += step) {
+      for (let k = 0; k < size; k++, j++) {
+        buf[0] = data[i + 2 * k + k * perOffset + pos];
+        buf[1] = data[i + 1 + 2 * k + k * perOffset + pos];
+        wave[j] = this.bytesToNumber(buf, bigEndian, signed);
+      }
+    }
+    return wave;
+  }
+
+  /**
+   * 判断两个数据是否相等
+   *
+   * @param src 源数组
+   * @param srcPos 源数组开始的位置
+   * @param dest 目标数组
+   * @param destPos 目标数组开始的位置
+   * @param len 比较的长度
+   * @returns 返回判断的结果
+   */
+  isEquals(src: any[], srcPos: number, dest: any[], destPos: number, len: number) {
+    if (src.length < len || dest.length < len) {
+      return false;
+    }
+    for (let i = 0; i < len; i++) {
+      if (src[i + srcPos] !== dest[i + destPos]) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
@@ -520,7 +605,7 @@ export class ByteBuf {
    */
   find(segment: number[] | Array<number> | Uint8Array, offset = 0): number {
     const head = segment.slice(0, 1)[0];
-    for (let start = offset; this._buf.length >= start + segment.length;) {
+    for (let start = offset; this._buf.length >= start + segment.length; ) {
       start = findIndexOf<number>(this._buf, start, (v) => v == head);
       if (start < 0) {
         return -1;
@@ -539,29 +624,10 @@ export class ByteBuf {
     }
     return -1;
   }
-
-  /**
-   * 判断两个数据是否相等
-   *
-   * @param arr1 数组1
-   * @param arr2 数组2
-   * @returns 返回判断的结果
-   */
-  isEquals(arr1: any[], arr2: any[]) {
-    if (arr1.length != arr2.length) {
-      return false;
-    }
-    for (let i = 0; i < arr1.length; i++) {
-      if (arr1[i] !== arr2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
 }
 
-export function findIndexOf<T>(array: Array<T>, start: number, predicate: ArrayPredicate<T>) {
-  for (let i = start, v; i < array.length; i++) {
+export function findIndexOf<T>(array: Array<T>, start: number, predicate: utils.ArrayPredicate<T>) {
+  for (let i = start; i < array.length; i++) {
     if (predicate(array[i], i, array)) {
       return start;
     }
@@ -569,27 +635,26 @@ export function findIndexOf<T>(array: Array<T>, start: number, predicate: ArrayP
   return -1;
 }
 
-
 /**
  * 获取验证码byte数组，基于Modbus CRC16的校验算法
  */
 export function CRC16(data: Array<number> | number[], start: number = 0, len: number = data.length, bigEndian = true) {
   // 预置 1 个 16 位的寄存器为十六进制FFFF, 称此寄存器为 CRC寄存器。
-  let crc = 0xFFFF;
+  let crc = 0xffff;
   for (let i = 0; i < len; i++) {
     let b = data[start + i];
     // 把第一个 8 位二进制数据 与 16 位的 CRC寄存器的低 8 位相异或, 把结果放于 CRC寄存器
-    crc = ((crc & 0xFF00) | (crc & 0x00FF) ^ (b & 0xFF));
+    crc = (crc & 0xff00) | ((crc & 0x00ff) ^ (b & 0xff));
     for (let j = 0; j < 8; j++) {
       // 把 CRC 寄存器的内容右移一位( 朝低位)用 0 填补最高位, 并检查右移后的移出位
       if ((crc & 0x0001) > 0) {
         // 如果移出位为 1, CRC寄存器与多项式A001进行异或
         crc = crc >> 1;
-        crc = crc ^ 0xA001;
-      } else
-        // 如果移出位为 0,再次右移一位
-        crc = crc >> 1;
+        crc = crc ^ 0xa001;
+      }
+      // 如果移出位为 0,再次右移一位
+      else crc = crc >> 1;
     }
   }
-  return binary.numberToBytes(crc & 0xFFFF, 16, bigEndian);
+  return binary.numberToBytes(crc & 0xffff, 16, bigEndian);
 }
