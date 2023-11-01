@@ -3,14 +3,18 @@
     <div
       id="container"
       class="wvParent"
-      style="width: 100%; height: 600px; background-color: white"
+      style="width: 100%; height: 800px; background-color: white"
     >
       <div
         id="wvBg"
         class="wvBg"
         style="width: 100%; height: 100%; background-color: white"
       ></div>
-      <div id="wv" class="wv" style="width: 100%; height: 100%; alpha: true"></div>
+      <div
+        id="wv"
+        class="wv"
+        style="width: 100%; height: 100%; alpha: true"
+      ></div>
     </div>
   </div>
 </template>
@@ -28,14 +32,14 @@ import {
   DEFAULT_OPTS
 } from '../libs/widgets/WaveView'
 
-const row = 6;
-const column = 2;
+const row = 6
+const column = 2
 let wv: WaveView
 
 const mqttClient = new mqtt.Client(<mqtt.MqttOptions>{
   autoReconnectInterval: 5000,
-  host: '192.168.1.198',
-  // host: 'pr.sensecho.com',
+  // host: '192.168.1.198',
+  host: 'pr.sensecho.com',
   port: 80,
   path: '/support/mqtt',
   clientId: mqtt.nextClientId('mqtt2233_')
@@ -56,7 +60,9 @@ let subscriber = <mqtt.MqttSubscriber>{
 
     //console.log(`${client.clientId}, subscriber1 接收到mqtt消息`, topic, msg);
     console.log(
-      `${client.clientId}, ${topic}, sn: ${packet.packageSn}, time: ${utils.dateFmt(packet.time * 1000)}`
+      `${client.clientId}, ${topic}, sn: ${
+        packet.packageSn
+      }, time: ${utils.dateFmt(packet.time * 1000)}`
     )
 
     // try {
@@ -84,6 +90,10 @@ mqttClient.subscribe(subscriber, 'hardware/11000138') // 订阅
 
 onMounted(() => {
   setTimeout(() => {
+    let container = document.getElementById('container')
+    container?.setAttribute('width', document.body.clientWidth.toString())
+    container?.setAttribute('height', document.body.clientHeight.toString())
+
     createCanvasGridBG(document.getElementById('wvBg') as any)
     wv = createCanvasWaveView(
       document.getElementById('wv') as any,

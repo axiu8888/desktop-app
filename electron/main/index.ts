@@ -1,7 +1,6 @@
 import { app, BrowserWindow, shell, ipcMain, PrintToPDFOptions } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
-import { binary } from '../../src/libs/binary-helper';
 // import { fs } from 'node:fs';
 import { writeFile } from 'fs';
 
@@ -69,36 +68,6 @@ async function createWindow() {
     win.loadFile(indexHtml)
   }
 
-  // 导出PDF
-  // setTimeout(() => {
-  //   // 加载
-  //   win.loadURL('https://pr.sensecho.com/monitorReports/physical?reportZid=28f45456bc62485897eb132e54d9ed67&loginName=ywtest&version=undefined&extend=undefined&moduleShow=true');
-  //   // win.loadURL('http://192.168.1.198/supportReport/v1/smwt?version=v1&reportId=f2bad5e772d14a919604be53ff2c92c3&extend=null');
-
-  //   setTimeout(() => {
-  //     win.webContents
-  //       .printToPDF(<PrintToPDFOptions>{
-  //         displayHeaderFooter: true,
-  //         preferCSSPageSize: true,
-  //         //pageSize: 'a4',
-  //       })
-  //       .then(buffer => {
-  //         // console.log(binary.bytesToStr(buffer))
-
-  //         // fs.writeFile('D:/tmp/test.pdf', buffer, err => {
-  //         writeFile('D:/tmp/test.pdf', buffer, err => {
-  //           if (err) {
-  //             console.error(err);
-  //           }
-  //           // file written successfully
-  //         });
-
-  //       })
-  //       .catch(err => console.error(err));
-  //   }, 10_000);
-
-  // }, 5000);
-
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString())
@@ -110,6 +79,47 @@ async function createWindow() {
     return { action: 'deny' }
   })
   // win.webContents.on('will-navigate', (event, url) => { }) #344
+
+
+  ipcMain.on('htmlToPdf', function (event, arg) {
+    //console.log('event ==>: ', event);
+    let args = arguments;
+    console.log('args ==>: ', args);
+    // 导出PDF
+    console.log('win.webContents.getURL ==>:', win.webContents.getURL());
+    
+    win.webContents.loadURL(args[1]);
+    win.webContents.once('did-finish-load', function() {
+      setTimeout(() => {
+        win.webContents
+        .printToPDF(<PrintToPDFOptions>{
+          displayHeaderFooter: true,
+          preferCSSPageSize: true,
+          pageSize: 'A4',
+        })
+        .then(buffer => {
+          // console.log(binary.bytesToStr(buffer))
+  
+          console.log(args[1]);
+  
+          let url = new URL(args[1]);
+          let id = url.searchParams.get('reportZid')
+          console.log('url.searchParams ==>:', url.searchParams);
+          console.log('id:', id);
+          id = id ? id : "test";
+  
+          // fs.writeFile('D:/tmp/test.pdf', buffer, err => {
+          writeFile(`D:/tmp/${id}.pdf`, buffer, err => {
+            if (err) {
+              console.error(err);
+            }
+            // file written successfully
+          });
+        })
+        .catch(err => console.error(err));
+      }, 5000);
+    });
+  });
 
 }
 
