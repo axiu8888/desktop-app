@@ -11,11 +11,7 @@
         style="width: 100%; height: 100%; background-color: #333333"
       ></div>
 
-      <div
-        id="wv"
-        class="wv"
-        style="width: 100%; height: 100%; overflow: hide"
-      >
+      <div id="wv" class="wv" style="width: 100%; height: 100%; overflow: hide">
         <div id="wv1" style="width: 50%; height: 100%; float: left"></div>
         <div id="wv2" style="width: 50%; height: 100%; float: right"></div>
       </div>
@@ -76,6 +72,8 @@ let subscriber = <mqtt.MqttSubscriber>{
     //   console.error(err)
     // }
 
+    //console.log(msg.payloadString);
+
     const packet = JSON.parse(msg.payloadString)
     console.log(packet)
     let array1 = new Array<number[]>(row * (column / 2))
@@ -118,29 +116,24 @@ onMounted(() => {
     container?.setAttribute('height', `${document.body.clientHeight * 0.8}`)
 
     createCanvasGridBG(document.getElementById('wvBg') as any)
+    const opts = {
+      ...DEFAULT_OPTS,
+      scaleRatio: 0.6,
+      step: 0.8,
+      lineWidth: 1.0,
+      strokeStyle: '#00CA83',
+    }
     wv1 = createCanvasWaveView(
       document.getElementById('wv1') as any,
       row,
       column / 2,
-      {
-        ...DEFAULT_OPTS,
-        scaleRatio: 0.8,
-        step: 0.8,
-        lineWidth: 1.0,
-        strokeStyle: '#00CA83',
-      }
+      opts
     )
     wv2 = createCanvasWaveView(
       document.getElementById('wv2') as any,
       row,
       column / 2,
-      {
-        ...DEFAULT_OPTS,
-        scaleRatio: 0.8,
-        step: 0.8,
-        lineWidth: 1.0,
-        strokeStyle: '#00CA83',
-      }
+      opts
     )
 
     mqttClient.connect()

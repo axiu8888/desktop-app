@@ -806,7 +806,7 @@ export const createCanvasGridBG = (container: HTMLElement) => {
   canvas.setAttribute('height', container.clientHeight.toString()) //给canvas设置高度
   container.appendChild(canvas)
   setCanvasPixelRatio(canvas, window.devicePixelRatio, canvas?.clientWidth, canvas?.clientHeight);
-  drawGrid(canvas, 8, true);
+  drawGrid(canvas, 15, true);
   return canvas;
 }
 
