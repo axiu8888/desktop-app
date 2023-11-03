@@ -10,9 +10,14 @@
         class="wvBg"
         style="width: 100%; height: 100%; background-color: white"
       ></div>
-      <div id="wv" class="wv">
-        <span id="wv1" style="width: 50%; height: 100%; alpha: true">111111</span>
-        <span id="wv2" style="width: 50%; height: 100%; alpha: true">222222</span>
+
+      <div
+        id="wv"
+        class="wv"
+        style="width: 100%; height: 780px; overflow: hide"
+      >
+        <div id="wv1" style="width: 50%; height: 100%; float: left"></div>
+        <div id="wv2" style="width: 50%; height: 100%; float: right"></div>
       </div>
     </div>
   </div>
