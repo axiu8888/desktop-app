@@ -3,18 +3,18 @@
     <div
       id="container"
       class="wvParent"
-      style="width: 100%; height: 780px; background-color: white"
+      style="width: 100%; height: 720px; background-color: #333333"
     >
       <div
         id="wvBg"
         class="wvBg"
-        style="width: 100%; height: 100%; background-color: white"
+        style="width: 100%; height: 100%; background-color: #333333"
       ></div>
 
       <div
         id="wv"
         class="wv"
-        style="width: 100%; height: 780px; overflow: hide"
+        style="width: 100%; height: 100%; overflow: hide"
       >
         <div id="wv1" style="width: 50%; height: 100%; float: left"></div>
         <div id="wv2" style="width: 50%; height: 100%; float: right"></div>
@@ -126,7 +126,8 @@ onMounted(() => {
         ...DEFAULT_OPTS,
         scaleRatio: 0.8,
         step: 0.8,
-        lineWidth: 1.0
+        lineWidth: 1.0,
+        strokeStyle: '#00CA83',
       }
     )
     wv2 = createCanvasWaveView(
@@ -137,7 +138,8 @@ onMounted(() => {
         ...DEFAULT_OPTS,
         scaleRatio: 0.8,
         step: 0.8,
-        lineWidth: 1.0
+        lineWidth: 1.0,
+        strokeStyle: '#00CA83',
       }
     )
 

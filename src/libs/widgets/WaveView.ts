@@ -313,7 +313,7 @@ export class ViewModel {
     this.y = this.baseLine;
 
     this.lineWidth = getOrDefault(opts.lineWidth, 1);
-    this.strokeStyle = getOrDefault(opts.strokeStyle, 'black');
+    this.strokeStyle = getOrDefault(opts.strokeStyle, 'red');
     this.lineCap = getOrDefault(opts.lineCap, 'round');
     this.lineJoin = getOrDefault(opts.lineJoin, 'round');
   }
@@ -554,12 +554,15 @@ export const drawGrid = function (canvas: HTMLCanvasElement, gridSize: number, c
  * @param ctx 画布上下文
  * @param i 索引
  */
-export const setPaint = function (ctx: CanvasRenderingContext2D, i: number) {
+export const setPaint = function (ctx: CanvasRenderingContext2D,
+  i: number,
+  sgColor: string | CanvasGradient | CanvasPattern = '#555555',
+  bgColor: string | CanvasGradient | CanvasPattern = '#6D6D6D',) {
   if (i === 0 || (i + 1) % 5 === 0) {
-    ctx.strokeStyle = "#00FF00";
+    ctx.strokeStyle = bgColor;
     ctx.lineWidth = 1.0;
   } else {
-    ctx.strokeStyle = "#00FF99";
+    ctx.strokeStyle = sgColor;
     ctx.lineWidth = 0.4;
   }
   ctx.lineCap = "round";
@@ -803,7 +806,7 @@ export const createCanvasGridBG = (container: HTMLElement) => {
   canvas.setAttribute('height', container.clientHeight.toString()) //给canvas设置高度
   container.appendChild(canvas)
   setCanvasPixelRatio(canvas, window.devicePixelRatio, canvas?.clientWidth, canvas?.clientHeight);
-  drawGrid(canvas, 20, true);
+  drawGrid(canvas, 8, true);
   return canvas;
 }
 
